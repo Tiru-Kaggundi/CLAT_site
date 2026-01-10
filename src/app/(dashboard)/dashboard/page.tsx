@@ -88,6 +88,23 @@ export default async function DashboardPage() {
             </Card>
           )}
 
+          {/* See Recent Effort */}
+          <Card>
+            <CardHeader>
+              <CardTitle>See my recent effort</CardTitle>
+              <CardDescription>
+                View your performance over the last month with best scores for each day
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/dashboard/recent-effort">
+                <Button variant="outline" className="w-full sm:w-auto">
+                  View Recent Effort
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
           {/* Practice More Link */}
           <Card>
             <CardHeader>

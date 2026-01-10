@@ -2,8 +2,8 @@
 
 import { db } from "@/lib/db";
 import { questions, questionSets, userResponses, users } from "@/lib/db/schema";
-import { eq, and, inArray, sql, ne } from "drizzle-orm";
-import { getTodayIST } from "@/lib/utils/date";
+import { eq, and, inArray, sql, ne, gte, lte, desc } from "drizzle-orm";
+import { getTodayIST, formatIST } from "@/lib/utils/date";
 import { updateUserStreak } from "@/lib/utils/streak";
 import type { QuestionOption, QuestionWithResponse } from "@/types";
 
@@ -605,5 +605,131 @@ export async function getHistoricalAverageScore(userId: string): Promise<{
       averageScore: 0,
       totalAttempts: 0,
     };
+  }
+}
+
+/**
+ * Get recent effort data (last 1 month) with user's best scores
+ */
+export async function getRecentEffort(userId: string): Promise<Array<{
+  date: string;
+  score: number | null; // null if not attempted
+  totalQuestions: number;
+}>> {
+  try {
+    const today = new Date();
+    const oneMonthAgo = new Date(today);
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    
+    // Format dates as YYYY-MM-DD
+    const todayStr = getTodayIST();
+    const oneMonthAgoStr = formatIST(oneMonthAgo, "yyyy-MM-dd");
+
+    // Get all question sets from the last 1 month, ordered by date (newest first)
+    const recentSets = await db
+      .select({
+        id: questionSets.id,
+        date: questionSets.date,
+      })
+      .from(questionSets)
+      .where(
+        and(
+          gte(questionSets.date, oneMonthAgoStr),
+          lte(questionSets.date, todayStr)
+        )
+      )
+      .orderBy(desc(questionSets.date));
+
+    if (recentSets.length === 0) {
+      return [];
+    }
+
+    // Get all questions for these sets
+    const setIds = recentSets.map((s) => s.id);
+    const allQuestions = await db
+      .select({
+        id: questions.id,
+        set_id: questions.set_id,
+      })
+      .from(questions)
+      .where(inArray(questions.set_id, setIds));
+
+    // Group questions by set_id
+    const questionsBySet = new Map<string, string[]>();
+    for (const q of allQuestions) {
+      if (!questionsBySet.has(q.set_id)) {
+        questionsBySet.set(q.set_id, []);
+      }
+      questionsBySet.get(q.set_id)!.push(q.id);
+    }
+
+    // Get all user responses for these questions
+    const allQuestionIds = allQuestions.map((q) => q.id);
+    const allResponses = allQuestionIds.length > 0
+      ? await db
+          .select({
+            question_id: userResponses.question_id,
+            is_correct: userResponses.is_correct,
+          })
+          .from(userResponses)
+          .where(
+            and(
+              eq(userResponses.user_id, userId),
+              inArray(userResponses.question_id, allQuestionIds)
+            )
+          )
+      : [];
+
+    // Group responses by question_id for quick lookup
+    const responsesByQuestion = new Map<string, boolean>();
+    for (const r of allResponses) {
+      responsesByQuestion.set(r.question_id, r.is_correct);
+    }
+
+    // Calculate score for each set
+    const result: Array<{ date: string; score: number | null; totalQuestions: number }> = [];
+
+    for (const set of recentSets) {
+      const questionIds = questionsBySet.get(set.id) || [];
+      const totalQuestions = questionIds.length;
+
+      if (totalQuestions === 0) {
+        // No questions for this set
+        result.push({
+          date: set.date,
+          score: null,
+          totalQuestions: 0,
+        });
+        continue;
+      }
+
+      // Check if user has attempted all questions
+      const attemptedQuestionIds = questionIds.filter((qId) => responsesByQuestion.has(qId));
+      const allAttempted = attemptedQuestionIds.length === totalQuestions;
+
+      if (!allAttempted) {
+        // Not attempted
+        result.push({
+          date: set.date,
+          score: null,
+          totalQuestions,
+        });
+      } else {
+        // Calculate best score (count correct answers)
+        const correctCount = attemptedQuestionIds.filter(
+          (qId) => responsesByQuestion.get(qId) === true
+        ).length;
+        result.push({
+          date: set.date,
+          score: correctCount,
+          totalQuestions,
+        });
+      }
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error getting recent effort:", error);
+    return [];
   }
 }
