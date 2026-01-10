@@ -22,26 +22,58 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Call the generate endpoint internally
-    const response = await fetch(`${request.nextUrl.origin}/api/generate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-cron-secret": cronSecret,
-      },
-    });
+    const today = getTodayIST();
 
-    const data = await response.json();
+    // Check if question set already exists for today
+    const [existingSet] = await db
+      .select()
+      .from(questionSets)
+      .where(eq(questionSets.date, today))
+      .limit(1);
 
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
+    // If existing set found, delete it to allow regeneration
+    if (existingSet) {
+      console.log(`Deleting existing question set for ${today} to allow regeneration`);
+      await db.delete(questionSets).where(eq(questionSets.id, existingSet.id));
+      console.log(`Deleted existing question set and associated questions for ${today}`);
     }
 
-    return NextResponse.json({ success: true, message: "Questions generated successfully", data });
+    // Generate questions using Gemini AI
+    const generatedQuestions = await generateQuestions();
+
+    // Create question set
+    const [newSet] = await db
+      .insert(questionSets)
+      .values({
+        date: today,
+      })
+      .returning();
+
+    // Insert all questions
+    const questionsToInsert = generatedQuestions.map((q) => ({
+      set_id: newSet.id,
+      content: q.content,
+      options: q.options,
+      correct_option: q.correct_option,
+      explanation: q.explanation,
+      category: q.category,
+    }));
+
+    await db.insert(questions).values(questionsToInsert);
+
+    return NextResponse.json({
+      success: true,
+      message: "Questions generated successfully",
+      date: today,
+      questionCount: generatedQuestions.length,
+    });
   } catch (error) {
-    console.error("Error in cron endpoint:", error);
+    console.error("Error generating questions in cron:", error);
     return NextResponse.json(
-      { error: "Failed to generate questions", details: error instanceof Error ? error.message : "Unknown error" },
+      {
+        error: "Failed to generate questions",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
