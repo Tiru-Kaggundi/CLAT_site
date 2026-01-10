@@ -11,15 +11,17 @@ import { getTodayIST } from "@/lib/utils/date";
 interface DatePickerProps {
   onDateSelect: (date: string) => void;
   availableDates?: string[];
+  minDate?: Date;
   maxDate?: Date;
 }
 
-export function DatePicker({ onDateSelect, availableDates = [], maxDate }: DatePickerProps) {
+export function DatePicker({ onDateSelect, availableDates = [], minDate, maxDate }: DatePickerProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [isOpen, setIsOpen] = useState(false);
 
   const today = new Date(getTodayIST() + "T00:00:00");
   const maxSelectableDate = maxDate || today;
+  const minSelectableDate = minDate || new Date("2020-01-01"); // Default to a very old date if not specified
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
@@ -49,7 +51,7 @@ export function DatePicker({ onDateSelect, availableDates = [], maxDate }: DateP
               mode="single"
               selected={selectedDate}
               onSelect={handleDateSelect}
-              disabled={(date) => date > maxSelectableDate}
+              disabled={(date) => date > maxSelectableDate || date < minSelectableDate}
               className="rounded-md border"
             />
           </CardContent>

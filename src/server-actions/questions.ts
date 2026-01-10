@@ -387,6 +387,24 @@ export async function getTodayScore(userId: string): Promise<{
 }
 
 /**
+ * Get the earliest question set date (first date when questions were generated)
+ */
+export async function getEarliestQuestionSetDate(): Promise<string | null> {
+  try {
+    const [earliestSet] = await db
+      .select({ date: questionSets.date })
+      .from(questionSets)
+      .orderBy(questionSets.date)
+      .limit(1);
+
+    return earliestSet?.date || null;
+  } catch (error) {
+    console.error("Error getting earliest question set date:", error);
+    return null;
+  }
+}
+
+/**
  * Get previous score for a specific date (for historical practice)
  */
 export async function getPreviousScoreForDate(
