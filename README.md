@@ -72,7 +72,8 @@ npm run db:studio
 2. Enable Email provider
 3. Enable Google OAuth provider and configure:
    - Add your OAuth credentials from Google Cloud Console
-   - Set redirect URL to: `https://your-domain.com/auth/callback`
+   - For local development: Set redirect URL to: `http://localhost:3000/auth/callback`
+   - For production: See [CUSTOM_DOMAIN_SETUP.md](./CUSTOM_DOMAIN_SETUP.md) for detailed instructions
 
 ### 5. Run Development Server
 
@@ -99,6 +100,14 @@ git push -u origin main
 1. Import your GitHub repository in Vercel
 2. Add all environment variables in Vercel dashboard
 3. Deploy
+
+### 2.5. Set Up Custom Domain (Optional)
+
+If you have a custom domain, follow the comprehensive guide in [CUSTOM_DOMAIN_SETUP.md](./CUSTOM_DOMAIN_SETUP.md) to:
+- Add your domain to Vercel
+- Configure DNS records
+- Update Supabase and Google OAuth settings
+- Verify everything works correctly
 
 ### 3. Configure Cron Job
 

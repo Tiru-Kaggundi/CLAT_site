@@ -86,7 +86,7 @@ export function QuestionSet({
           correctOption: q.correct_option,
         }));
 
-      const result = await submitQuestionSet(userId, answers);
+      const result = await submitQuestionSet(userId, answers, isHistorical);
 
       if (result.success) {
         setResults(result);
@@ -166,54 +166,73 @@ export function QuestionSet({
           
           <div className="space-y-4">
             {/* Historical Practice Results */}
-            {isHistorical && previousScore && (
+            {isHistorical && (
               <>
-                {/* Previous Score */}
-                <div className="text-center p-4 bg-background rounded-lg border">
-                  <p className="text-sm text-muted-foreground mb-1">Last time you scored</p>
-                  <p className="text-xl font-bold">
-                    <span className="text-muted-foreground">{previousScore.score}</span>
-                    <span className="text-muted-foreground"> / {previousScore.totalQuestions}</span>
-                  </p>
-                </div>
-
-                {/* This Time Score */}
-                <div className="text-center p-4 bg-background rounded-lg border border-primary/20">
-                  <p className="text-sm text-muted-foreground mb-1">This time you scored</p>
-                  <p className="text-2xl font-bold">
-                    <span className="text-primary">{results.score}</span>
-                    <span className="text-muted-foreground"> / {results.totalQuestions}</span>
-                  </p>
-                </div>
-
-                {/* Congratulations if improved */}
-                {results.score > previousScore.score && (
-                  <div className="text-center p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-                    <p className="text-lg font-bold text-green-600 dark:text-green-400 mb-1">
-                      🎉 Congratulations! 🎉
+                {/* First Attempt - Show current score only */}
+                {!previousScore && (
+                  <div className="text-center p-4 bg-background rounded-lg border border-primary/20">
+                    <p className="text-sm text-muted-foreground mb-1">Your score</p>
+                    <p className="text-2xl font-bold">
+                      <span className="text-primary">{results.score}</span>
+                      <span className="text-muted-foreground"> / {results.totalQuestions}</span>
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      You improved by {results.score - previousScore.score} point{results.score - previousScore.score === 1 ? '' : 's'}!
+                    <p className="text-xs text-muted-foreground mt-2">
+                      This score has been saved. Try again to improve!
                     </p>
                   </div>
                 )}
 
-                {/* Same score message */}
-                {results.score === previousScore.score && (
-                  <div className="text-center p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      You scored the same as last time. Keep practicing to improve!
-                    </p>
-                  </div>
-                )}
+                {/* Subsequent Attempts - Show comparison */}
+                {previousScore && (
+                  <>
+                    {/* Previous Score */}
+                    <div className="text-center p-4 bg-background rounded-lg border">
+                      <p className="text-sm text-muted-foreground mb-1">Last time you scored</p>
+                      <p className="text-xl font-bold">
+                        <span className="text-muted-foreground">{previousScore.score}</span>
+                        <span className="text-muted-foreground"> / {previousScore.totalQuestions}</span>
+                      </p>
+                    </div>
 
-                {/* Lower score message */}
-                {results.score < previousScore.score && (
-                  <div className="text-center p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      Your score was {previousScore.score - results.score} point{previousScore.score - results.score === 1 ? '' : 's'} lower this time. Don't give up, keep practicing!
-                    </p>
-                  </div>
+                    {/* This Time Score */}
+                    <div className="text-center p-4 bg-background rounded-lg border border-primary/20">
+                      <p className="text-sm text-muted-foreground mb-1">This time you scored</p>
+                      <p className="text-2xl font-bold">
+                        <span className="text-primary">{results.score}</span>
+                        <span className="text-muted-foreground"> / {results.totalQuestions}</span>
+                      </p>
+                    </div>
+
+                    {/* Congratulations if improved */}
+                    {results.score > previousScore.score && (
+                      <div className="text-center p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                        <p className="text-lg font-bold text-green-600 dark:text-green-400 mb-1">
+                          🎉 Congratulations! 🎉
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          You improved by {results.score - previousScore.score} point{results.score - previousScore.score === 1 ? '' : 's'}! This is now your best score for this date.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Same score message */}
+                    {results.score === previousScore.score && (
+                      <div className="text-center p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                          You scored the same as last time. Keep practicing to improve!
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Lower score message */}
+                    {results.score < previousScore.score && (
+                      <div className="text-center p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                          Your score was {previousScore.score - results.score} point{previousScore.score - results.score === 1 ? '' : 's'} lower this time. Your best score ({previousScore.score}/{previousScore.totalQuestions}) has been kept. Don't give up, keep practicing!
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}

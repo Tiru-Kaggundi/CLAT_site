@@ -190,10 +190,15 @@ export async function submitAnswers(
  * Submit all answers for a question set and update streak
  * IMPORTANT: If all 10 questions in the set have already been answered, 
  * the score is LOCKED and returns the original score without updating.
+ * 
+ * For historical practice:
+ * - First attempt: Save responses and show score
+ * - Subsequent attempts: Only update responses if new score > old score
  */
 export async function submitQuestionSet(
   userId: string,
-  answers: Array<{ questionId: string; selectedOption: QuestionOption; correctOption: QuestionOption }>
+  answers: Array<{ questionId: string; selectedOption: QuestionOption; correctOption: QuestionOption }>,
+  isHistorical: boolean = false
 ): Promise<{
   success: boolean;
   score: number;
@@ -203,7 +208,7 @@ export async function submitQuestionSet(
   try {
     const questionIds = answers.map((a) => a.questionId);
     
-    // Check if all questions have already been answered (score is locked)
+    // Check if all questions have already been answered
     const existingResponses = await db
       .select()
       .from(userResponses)
@@ -214,8 +219,62 @@ export async function submitQuestionSet(
         )
       );
 
-    // If all 10 questions already have responses, score is LOCKED - return original score
-    if (existingResponses.length === 10 && questionIds.length === 10) {
+    // For historical practice: only update if new score is better
+    if (isHistorical && existingResponses.length === 10 && questionIds.length === 10) {
+      // Calculate current best score from existing responses
+      const bestScore = existingResponses.filter((r) => r.is_correct).length;
+      
+      // Calculate new score from submitted answers
+      let newScore = 0;
+      for (const answer of answers) {
+        if (answer.selectedOption === answer.correctOption) {
+          newScore++;
+        }
+      }
+      
+      // Only update if new score is better
+      if (newScore > bestScore) {
+        // Update all responses with new answers
+        for (const answer of answers) {
+          const isCorrect = answer.selectedOption === answer.correctOption;
+          await db
+            .update(userResponses)
+            .set({
+              selected_option: answer.selectedOption,
+              is_correct: isCorrect,
+              answered_at: new Date(),
+            })
+            .where(
+              and(
+                eq(userResponses.user_id, userId),
+                eq(userResponses.question_id, answer.questionId)
+              )
+            );
+        }
+        
+        // Note: Historical practice doesn't update total_score or streak
+        // Only update the responses to track the "last time you scored"
+        const [updatedUser] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+        return {
+          success: true,
+          score: newScore,
+          totalQuestions: 10,
+          streakCount: updatedUser?.streak_count || 0,
+        };
+      } else {
+        // Keep old score - don't update responses
+        const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+        return {
+          success: true,
+          score: bestScore,
+          totalQuestions: 10,
+          streakCount: user?.streak_count || 0,
+        };
+      }
+    }
+
+    // For today's questions: If all 10 questions already have responses, score is LOCKED - return original score
+    if (!isHistorical && existingResponses.length === 10 && questionIds.length === 10) {
       const originalCorrectCount = existingResponses.filter((r) => r.is_correct).length;
       
       const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
@@ -276,8 +335,8 @@ export async function submitQuestionSet(
       };
     }
 
-    // Update user score only with newly correct answers
-    if (newCorrectAnswers > 0) {
+    // Update user score only with newly correct answers (NOT for historical practice)
+    if (newCorrectAnswers > 0 && !isHistorical) {
       await db
         .update(users)
         .set({
@@ -286,8 +345,8 @@ export async function submitQuestionSet(
         .where(eq(users.id, userId));
     }
 
-    // Update streak (only if all 10 questions answered for the first time)
-    if (answers.length === 10 && existingResponses.length < 10) {
+    // Update streak (only if all 10 questions answered for the first time AND NOT historical)
+    if (answers.length === 10 && existingResponses.length < 10 && !isHistorical) {
       const { streakCount } = await updateUserStreak(userId, new Date());
       return {
         success: true,

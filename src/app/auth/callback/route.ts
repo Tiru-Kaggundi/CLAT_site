@@ -3,37 +3,45 @@ import { NextResponse, type NextRequest } from "next/server";
 import { cookies } from "next/headers";
 
 export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url);
-  const code = requestUrl.searchParams.get("code");
-  const next = requestUrl.searchParams.get("next") || "/dashboard";
+  try {
+    const requestUrl = new URL(request.url);
+    const code = requestUrl.searchParams.get("code");
+    const next = requestUrl.searchParams.get("next") || "/dashboard";
 
-  if (code) {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
+    if (code) {
+      const cookieStore = await cookies();
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return cookieStore.get(name)?.value;
+            },
+            set(name: string, value: string, options: any) {
+              cookieStore.set(name, value, options);
+            },
+            remove(name: string) {
+              cookieStore.delete(name);
+            },
           },
-          set(name: string, value: string, options: any) {
-            cookieStore.set(name, value, options);
-          },
-          remove(name: string, options: any) {
-            cookieStore.delete(name);
-          },
-        },
+        }
+      );
+
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+      if (!error) {
+        return NextResponse.redirect(new URL(next, request.url));
+      } else {
+        console.error("Error exchanging code for session:", error);
       }
-    );
-
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (!error) {
-      return NextResponse.redirect(new URL(next, request.url));
     }
-  }
 
-  // If there's an error or no code, redirect to login
-  return NextResponse.redirect(new URL("/login", request.url));
+    // If there's an error or no code, redirect to login
+    return NextResponse.redirect(new URL("/login", request.url));
+  } catch (error) {
+    console.error("Auth callback error:", error);
+    // Redirect to login on any error
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
 }
