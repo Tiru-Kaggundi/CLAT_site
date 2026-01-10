@@ -56,7 +56,7 @@ export async function generateQuestions(): Promise<QuestionSetInput> {
         tools: [
           {
             googleSearch: {},
-          },
+          } as any, // Type assertion needed - googleSearch is valid at runtime but not in TypeScript types
         ],
       });
 
@@ -87,7 +87,7 @@ export async function generateQuestions(): Promise<QuestionSetInput> {
                     dynamicThreshold: 0.3,
                   },
                 },
-              },
+              } as any, // Type assertion needed - googleSearchRetrieval is valid at runtime but not in TypeScript types
             ],
           });
           result = await model.generateContent(prompt);
