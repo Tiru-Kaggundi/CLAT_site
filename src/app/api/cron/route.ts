@@ -5,6 +5,9 @@ import { questionSets, questions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getTodayIST } from "@/lib/utils/date";
 
+// Force dynamic rendering to ensure cron job runs
+export const dynamic = 'force-dynamic';
+
 /**
  * Vercel Cron endpoint - validates CRON_SECRET and triggers question generation
  */
