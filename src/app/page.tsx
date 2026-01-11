@@ -57,6 +57,19 @@ export default function HomePage() {
           </div>
         </div>
       </main>
+      <footer className="border-t mt-auto py-4">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-center gap-6 text-sm text-muted-foreground">
+            <Link href="/privacy" className="hover:text-foreground transition-colors">
+              Privacy Policy
+            </Link>
+            <span>•</span>
+            <Link href="/terms" className="hover:text-foreground transition-colors">
+              Terms of Service
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
