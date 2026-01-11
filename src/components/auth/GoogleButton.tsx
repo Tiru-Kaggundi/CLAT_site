@@ -1,12 +1,23 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/auth/supabase-client-client";
+import { isInAppBrowser } from "@/lib/utils/browser-detection";
 
 export function GoogleButton() {
   const supabase = createClient();
+  const [disabled, setDisabled] = useState(false);
+
+  useEffect(() => {
+    if (isInAppBrowser()) {
+      setDisabled(true);
+    }
+  }, []);
 
   const handleGoogleSignIn = async () => {
+    if (disabled) return;
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -25,6 +36,7 @@ export function GoogleButton() {
       variant="outline"
       className="w-full mt-4"
       onClick={handleGoogleSignIn}
+      disabled={disabled}
     >
       <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
         <path

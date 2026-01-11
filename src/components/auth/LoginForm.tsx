@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GoogleButton } from "./GoogleButton";
+import { InAppBrowserWarning } from "./InAppBrowserWarning";
 import { createClient } from "@/lib/auth/supabase-client-client";
 import { useRouter } from "next/navigation";
 
@@ -58,6 +59,7 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <InAppBrowserWarning />
         <form onSubmit={handleEmailAuth} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
