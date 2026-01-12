@@ -103,6 +103,8 @@ export function AnonymousQuestionSet({
           key={question.id}
           question={{
             ...question,
+            set_id: setId,
+            created_at: new Date(), // Anonymous questions don't have a real created_at, use current date
             userResponse: undefined, // No user response for anonymous
           }}
           questionNumber={index + 1}
