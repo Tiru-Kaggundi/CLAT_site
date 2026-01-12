@@ -8,6 +8,58 @@ import { updateUserStreak } from "@/lib/utils/streak";
 import type { QuestionOption, QuestionWithResponse } from "@/types";
 
 /**
+ * Fetch today's question set without user responses (for anonymous users)
+ */
+export async function getTodayQuestionsAnonymous(): Promise<{
+  questions: Array<{
+    id: string;
+    content: string;
+    options: { a: string; b: string; c: string; d: string };
+    correct_option: QuestionOption;
+    explanation: string;
+    category: string;
+  }>;
+  setId: string;
+  date: string;
+} | null> {
+  const today = getTodayIST();
+
+  // Find today's question set
+  const [set] = await db
+    .select()
+    .from(questionSets)
+    .where(eq(questionSets.date, today))
+    .limit(1);
+
+  if (!set) {
+    return null;
+  }
+
+  // Fetch all questions for this set
+  const questionList = await db
+    .select()
+    .from(questions)
+    .where(eq(questions.set_id, set.id))
+    .orderBy(questions.created_at);
+
+  // Return questions without user responses
+  const questionsWithoutResponses = questionList.map((q) => ({
+    id: q.id,
+    content: q.content,
+    options: q.options as { a: string; b: string; c: string; d: string },
+    correct_option: q.correct_option as QuestionOption,
+    explanation: q.explanation,
+    category: q.category,
+  }));
+
+  return {
+    questions: questionsWithoutResponses,
+    setId: set.id,
+    date: set.date,
+  };
+}
+
+/**
  * Fetch today's question set with user responses (if any)
  */
 export async function getTodayQuestions(userId: string): Promise<{
@@ -609,7 +661,7 @@ export async function getHistoricalAverageScore(userId: string): Promise<{
 }
 
 /**
- * Get recent effort data (last 1 month) with user's best scores
+ * Get all effort data with user's best scores (no date limit)
  */
 export async function getRecentEffort(userId: string): Promise<Array<{
   date: string;
@@ -617,27 +669,16 @@ export async function getRecentEffort(userId: string): Promise<Array<{
   totalQuestions: number;
 }>> {
   try {
-    const today = new Date();
-    const oneMonthAgo = new Date(today);
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    
-    // Format dates as YYYY-MM-DD
     const todayStr = getTodayIST();
-    const oneMonthAgoStr = formatIST(oneMonthAgo, "yyyy-MM-dd");
 
-    // Get all question sets from the last 1 month, ordered by date (newest first)
+    // Get all question sets, ordered by date (newest first)
     const recentSets = await db
       .select({
         id: questionSets.id,
         date: questionSets.date,
       })
       .from(questionSets)
-      .where(
-        and(
-          gte(questionSets.date, oneMonthAgoStr),
-          lte(questionSets.date, todayStr)
-        )
-      )
+      .where(lte(questionSets.date, todayStr))
       .orderBy(desc(questionSets.date));
 
     if (recentSets.length === 0) {

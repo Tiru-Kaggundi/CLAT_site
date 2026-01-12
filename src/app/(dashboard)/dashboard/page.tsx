@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DatePicker } from "@/components/dashboard/DatePicker";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { getTodayIST } from "@/lib/utils/date";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -38,54 +39,60 @@ export default async function DashboardPage() {
         <div className="space-y-6">
           {/* Total Score */}
           {userStats && userStats.totalQuestions > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Total Score</CardTitle>
-                <CardDescription>
-                  Your cumulative score across all attempts
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <p className="text-4xl font-bold mb-2">
-                    <span className="text-primary">{userStats.totalScore}</span>
-                    <span className="text-muted-foreground"> / {userStats.totalQuestions}</span>
-                  </p>
-                  <p className="text-lg font-semibold text-primary mb-1">
-                    {((userStats.totalScore / userStats.totalQuestions) * 100).toFixed(1)}%
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Current streak: <span className="font-semibold text-foreground">{userStats.streakCount} days</span>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <Link href="/dashboard/recent-effort" className="block">
+              <Card className="hover:border-primary transition-colors cursor-pointer">
+                <CardHeader>
+                  <CardTitle>Total Score</CardTitle>
+                  <CardDescription>
+                    Your cumulative score across all attempts
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center">
+                    <p className="text-4xl font-bold mb-2">
+                      <span className="text-primary">{userStats.totalScore}</span>
+                      <span className="text-muted-foreground"> / {userStats.totalQuestions}</span>
+                    </p>
+                    <p className="text-lg font-semibold text-primary mb-1">
+                      {((userStats.totalScore / userStats.totalQuestions) * 100).toFixed(1)}%
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Current streak: <span className="font-semibold text-foreground">{userStats.streakCount} days</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2 italic">Click to view recent effort</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           )}
 
           {/* Today's Score */}
           {todayScore && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Today's Score</CardTitle>
-                <CardDescription>
-                  Your performance for today's questions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <p className="text-4xl font-bold mb-2">
-                    <span className="text-primary">{todayScore.score}</span>
-                    <span className="text-muted-foreground"> / {todayScore.totalQuestions}</span>
-                  </p>
-                  <p className="text-lg font-semibold text-primary mb-1">
-                    {((todayScore.score / todayScore.totalQuestions) * 100).toFixed(1)}%
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Current streak: <span className="font-semibold text-foreground">{todayScore.streakCount} days</span>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <Link href={`/dashboard/${getTodayIST()}`} className="block">
+              <Card className="hover:border-primary transition-colors cursor-pointer">
+                <CardHeader>
+                  <CardTitle>Today's Score</CardTitle>
+                  <CardDescription>
+                    Your performance for today's questions
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center">
+                    <p className="text-4xl font-bold mb-2">
+                      <span className="text-primary">{todayScore.score}</span>
+                      <span className="text-muted-foreground"> / {todayScore.totalQuestions}</span>
+                    </p>
+                    <p className="text-lg font-semibold text-primary mb-1">
+                      {((todayScore.score / todayScore.totalQuestions) * 100).toFixed(1)}%
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Current streak: <span className="font-semibold text-foreground">{todayScore.streakCount} days</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2 italic">Click to review answers</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           )}
 
           {/* See Recent Effort */}

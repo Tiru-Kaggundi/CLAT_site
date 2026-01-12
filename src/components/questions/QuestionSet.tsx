@@ -155,7 +155,7 @@ export function QuestionSet({
             size="lg"
             className="min-w-[200px]"
           >
-            {loading ? "Submitting..." : timeUp ? "Submitting..." : "Submit Answers"}
+            {loading ? "Evaluating answers..." : timeUp ? "Evaluating answers..." : "Submit Answers"}
           </Button>
         </div>
       )}
@@ -239,26 +239,43 @@ export function QuestionSet({
 
             {/* Today's Score (non-historical) */}
             {!isHistorical && (
-              <div className="text-center p-4 bg-background rounded-lg border">
-                <p className="text-sm text-muted-foreground mb-1">Today's Score</p>
-                <p className="text-2xl font-bold">
-                  <span className="text-primary">{results.score}</span>
-                  <span className="text-muted-foreground"> / {results.totalQuestions}</span>
-                </p>
+              <div className="space-y-3">
+                <div className="text-center p-4 bg-background rounded-lg border">
+                  <p className="text-sm text-muted-foreground mb-1">Today's Score</p>
+                  <p className="text-2xl font-bold">
+                    <span className="text-primary">{results.score}</span>
+                    <span className="text-muted-foreground"> / {results.totalQuestions}</span>
+                  </p>
+                </div>
+                {/* Practice Again Option */}
+                {results.score < results.totalQuestions && (
+                  <div className="text-center">
+                    <Button
+                      onClick={() => router.push("/dashboard")}
+                      variant="outline"
+                      className="min-w-[200px]"
+                    >
+                      Practice Again to Improve
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Historical Average Score */}
             {!isHistorical && historicalScore && historicalScore.totalAttempts > 0 && (
-              <div className="text-center p-4 bg-background rounded-lg border">
-                <p className="text-sm text-muted-foreground mb-1">
-                  Historical Average ({historicalScore.totalAttempts} {historicalScore.totalAttempts === 1 ? 'attempt' : 'attempts'})
-                </p>
-                <p className="text-2xl font-bold">
-                  <span className="text-primary">{historicalScore.averageScore.toFixed(1)}</span>
-                  <span className="text-muted-foreground"> / 10</span>
-                </p>
-              </div>
+              <Link href="/dashboard/recent-effort" className="block">
+                <div className="text-center p-4 bg-background rounded-lg border hover:border-primary transition-colors cursor-pointer">
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Historical Average ({historicalScore.totalAttempts} {historicalScore.totalAttempts === 1 ? 'attempt' : 'attempts'})
+                  </p>
+                  <p className="text-2xl font-bold">
+                    <span className="text-primary">{historicalScore.averageScore.toFixed(1)}</span>
+                    <span className="text-muted-foreground"> / 10</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2 italic">Click to view recent effort</p>
+                </div>
+              </Link>
             )}
 
             {/* Streak */}
@@ -274,13 +291,14 @@ export function QuestionSet({
           {/* Navigation button */}
           {!isHistorical && (
             <div className="mt-6 flex justify-center">
-              <Button
-                onClick={() => router.push("/dashboard")}
-                variant="default"
-                className="min-w-[200px]"
-              >
-                Back to Dashboard
-              </Button>
+              <Link href="/dashboard">
+                <Button
+                  variant="default"
+                  className="min-w-[200px]"
+                >
+                  Back to Dashboard
+                </Button>
+              </Link>
             </div>
           )}
         </div>

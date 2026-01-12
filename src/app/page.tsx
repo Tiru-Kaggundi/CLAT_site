@@ -21,38 +21,44 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mt-12">
-            <Card>
-              <CardHeader>
-                <CardTitle>Daily Questions</CardTitle>
-                <CardDescription>
-                  10 fresh MCQs every day from the last 72 hours of news
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Track Your Progress</CardTitle>
-                <CardDescription>
-                  Build streaks and monitor your improvement over time
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Historical Practice</CardTitle>
-                <CardDescription>
-                  Practice questions from any previous date
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </div>
-
-          <div className="mt-12">
+          <div className="mt-8 flex justify-center">
             <Link href="/login">
               <Button size="lg" className="text-lg px-8 py-6">
                 Get Started
               </Button>
+            </Link>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 mt-12">
+            <Link href="/login" className="block">
+              <Card className="h-full hover:border-primary transition-colors cursor-pointer">
+                <CardHeader>
+                  <CardTitle>Daily Questions</CardTitle>
+                  <CardDescription>
+                    10 fresh MCQs every day from the last 72 hours of news
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+            <Link href="/login" className="block">
+              <Card className="h-full hover:border-primary transition-colors cursor-pointer">
+                <CardHeader>
+                  <CardTitle>Track Your Progress</CardTitle>
+                  <CardDescription>
+                    Build streaks and monitor your improvement over time
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+            <Link href="/login" className="block">
+              <Card className="h-full hover:border-primary transition-colors cursor-pointer">
+                <CardHeader>
+                  <CardTitle>Historical Practice</CardTitle>
+                  <CardDescription>
+                    Practice questions from any previous date
+                  </CardDescription>
+                </CardHeader>
+              </Card>
             </Link>
           </div>
         </div>
