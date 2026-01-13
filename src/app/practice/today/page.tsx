@@ -4,6 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+// Force dynamic rendering to always fetch latest questions
+export const dynamic = 'force-dynamic';
+
 export default async function AnonymousPracticePage() {
   const questionData = await getTodayQuestionsAnonymous();
 

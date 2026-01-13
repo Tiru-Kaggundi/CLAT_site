@@ -85,7 +85,11 @@ export function RecentEffortClient({ recentEffort }: RecentEffortClientProps) {
                         <td className="p-4">
                           <Link href={`/dashboard/${item.date}`}>
                             <Button variant={item.score !== null ? "outline" : "default"} size="sm">
-                              {item.score !== null ? "Review" : "Try Now"}
+                              {item.score === null 
+                                ? "Try Now" 
+                                : item.score === item.totalQuestions 
+                                  ? "Review" 
+                                  : "Try Again"}
                             </Button>
                           </Link>
                         </td>
