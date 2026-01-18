@@ -120,11 +120,18 @@ export async function generateQuestions(): Promise<QuestionSetInput> {
           const candidate = candidates[0];
           // Check for grounding metadata in the response
           if (candidate.groundingMetadata) {
+            const searchQueries = candidate.groundingMetadata.webSearchQueries || [];
+            const groundingChunks = candidate.groundingMetadata.groundingChunks || [];
             console.log(`✓ Grounding was used (${groundingConfig}) - sources found:`, 
-              candidate.groundingMetadata.webSearchQueries?.length || 0);
+              searchQueries.length, `queries,`, groundingChunks.length, `chunks`);
+            
+            // Log search queries to verify they're looking for recent news
+            if (searchQueries.length > 0) {
+              console.log(`Search queries used:`, searchQueries);
+            }
           } else {
-            console.warn(`⚠ Warning: Grounding may not have been used despite being configured. ` +
-              `The model might not have needed to search, or grounding metadata is not available.`);
+            console.warn(`⚠ WARNING: Grounding metadata not found. The model may not have used search grounding. ` +
+              `This could result in outdated news. Please verify the generated questions are from recent news.`);
           }
         }
       } catch (metadataError) {
@@ -145,6 +152,19 @@ export async function generateQuestions(): Promise<QuestionSetInput> {
       // Parse and validate
       const parsed = JSON.parse(jsonText);
       const validated = questionSetSchema.parse(parsed);
+
+      // Additional validation: Check if questions mention old dates (basic check)
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth(); // 0-11
+      const textContent = JSON.stringify(validated).toLowerCase();
+      
+      // Check for mentions of old years (before current year, or June 2024 specifically)
+      const oldYearPattern = /(202[0-3]|june\s+2024)/i;
+      if (oldYearPattern.test(textContent)) {
+        console.warn(`⚠ WARNING: Generated questions may contain references to old dates (2020-2023 or June 2024). ` +
+          `Please verify all current affairs questions are from recent news (last 72 hours to 1 week).`);
+        console.warn(`Current date context: ${currentDateStr}`);
+      }
 
       console.log(`Successfully generated questions using model: ${modelName}`);
       return validated;

@@ -16,12 +16,14 @@ CURRENT DATE CONTEXT (IST - Indian Standard Time):
 - Preferred News Window: Last 72 hours (from ${date72HoursAgo} to ${currentDate})
 - Maximum Allowed News Age: 1 week (articles published after ${date1WeekAgo} are acceptable, but prioritize more recent news)
 
-CRITICAL DATE VALIDATION REQUIREMENTS:
-1. Before generating any question from a news article, you MUST verify the publication date
-2. STRICTLY prefer news articles published within the last 72 hours (from ${date72HoursAgo} to ${currentDate})
-3. If insufficient recent news is available, you may use articles published up to 1 week ago (after ${date1WeekAgo}), but ALWAYS prioritize the most recent articles
-4. ABSOLUTELY REJECT any article older than ${date1WeekAgo} - do not generate questions from such articles
-5. When generating date-specific questions, ensure the dates mentioned in the question match the actual publication dates of the news articles
+CRITICAL DATE VALIDATION REQUIREMENTS - THESE ARE MANDATORY:
+1. **MANDATORY**: Before generating ANY question from a news article, you MUST verify the publication date using Google Search grounding
+2. **STRICT PRIORITY**: STRICTLY prefer news articles published within the last 72 hours (from ${date72HoursAgo} to ${currentDate})
+3. **FALLBACK ONLY**: If insufficient recent news is available, you may use articles published up to 1 week ago (after ${date1WeekAgo}), but ALWAYS prioritize the most recent articles
+4. **ABSOLUTE REJECTION**: ABSOLUTELY REJECT and DO NOT USE any article older than ${date1WeekAgo}. If you find old news (older than 1 week), you MUST search for more recent news instead
+5. **DATE VERIFICATION**: When generating date-specific questions, ensure the dates mentioned in the question match the actual publication dates of the news articles. If a news article is from June 2024 or any date before ${date1WeekAgo}, you MUST reject it and find more recent news
+6. **EXPLICIT DATE CHECK**: For each current affairs question, verify that the news event happened or was reported within the last 72 hours (preferred) or at most 1 week ago. If you cannot find recent news on a topic, switch to a different recent topic
+7. **NO EXCEPTIONS**: Do not use historical events, old news, or events from previous months/years. ONLY use news from the specified time window (last 72 hours preferred, max 1 week)
 
 PRIORITIZED NEWS SOURCES:
 When searching for current affairs news, prioritize articles from these sources in order:
@@ -38,8 +40,13 @@ Source Selection Strategy:
 - Never use news from sources that are unreliable or unverified
 
 Your task is to generate exactly 10 high-quality MCQs based on:
-1. Recent news from the last 72 hours (preferred) or up to 1 week old (maximum) - use Google Search grounding to fetch current information
+1. **RECENT NEWS ONLY** from the last 72 hours (preferred) or up to 1 week old (maximum) - you MUST use Google Search grounding to fetch CURRENT information and verify publication dates
 2. Static general knowledge relevant to CLAT preparation
+
+**IMPORTANT**: If Google Search grounding returns old news (from June 2024, 2023, or any date before ${date1WeekAgo}), you MUST:
+- Reject that news article completely
+- Search for a different, more recent news topic
+- Only proceed with news that has a verified publication date within the allowed window
 
 Focus Areas for Dynamic Current Affairs (from last 72 hours preferred, max 1 week):
 - Major national and international events
@@ -62,7 +69,11 @@ Question Format Requirements:
 - All 4 options should be plausible and close to the actual answer (avoid obviously wrong options)
 - Include a correct answer (one of: a, b, c, or d)
 - Provide a logical explanation for why the correct answer is right
-- For current affairs questions, ensure dates mentioned are accurate and match the news publication dates
+- **MANDATORY for current affairs questions**: 
+  * Ensure dates mentioned are accurate and match the news publication dates
+  * Include the publication date or event date in the explanation (e.g., "This event was reported on [date]")
+  * Verify the news is from the last 72 hours (preferred) or at most 1 week old
+  * If you cannot verify the date is recent, DO NOT create the question - find different recent news instead
 
 Output Format (JSON):
 Return a JSON array with exactly 10 questions. Each question object must have:
@@ -83,8 +94,12 @@ Important:
 - Ensure questions are appropriate for CLAT aspirants (undergraduate level)
 - Mix dynamic current affairs with static GK appropriately
 - Make sure all questions are factually accurate
-- VERIFY all dates in current affairs questions match the actual news publication dates
+- **CRITICAL**: VERIFY all dates in current affairs questions match the actual news publication dates
+- **REJECT OLD NEWS**: If you find news from June 2024, 2023, or any date before ${date1WeekAgo}, you MUST reject it and search for more recent news
+- **USE SEARCH GROUNDING**: Always use Google Search grounding to fetch the LATEST news - do not rely on training data which may be outdated
 - Return ONLY valid JSON, no additional text or markdown formatting
+
+**FINAL REMINDER**: The current date is ${currentDate}. You MUST only use news from ${date72HoursAgo} onwards (preferred) or at most from ${date1WeekAgo} onwards. Any news older than ${date1WeekAgo} is STRICTLY FORBIDDEN.
 
 Generate 10 questions now:`;
 }
