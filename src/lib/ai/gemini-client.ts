@@ -121,7 +121,7 @@ export async function generateQuestions(): Promise<QuestionSetInput> {
           // Check for grounding metadata in the response
           if (candidate.groundingMetadata) {
             const searchQueries = candidate.groundingMetadata.webSearchQueries || [];
-            const groundingChunks = candidate.groundingMetadata.groundingChunks || [];
+            const groundingChunks = candidate.groundingMetadata.groundingChuncks || []; // Note: typo in API - it's "chuncks" not "chunks"
             console.log(`✓ Grounding was used (${groundingConfig}) - sources found:`, 
               searchQueries.length, `queries,`, groundingChunks.length, `chunks`);
             
