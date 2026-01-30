@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/server-actions/auth";
 import { Navbar } from "@/components/layout/Navbar";
 
+// All dashboard routes use cookies (auth) and/or DB — must be dynamic, not statically prerendered
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({
   children,
 }: {
