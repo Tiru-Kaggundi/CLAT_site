@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { QuestionCard } from "./QuestionCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Timer } from "./Timer";
+import { recordAnonymousAttempt } from "@/server-actions/anonymous";
 import type { QuestionOption } from "@/types";
 
 interface AnonymousQuestion {
@@ -29,7 +29,6 @@ export function AnonymousQuestionSet({
   setId,
   date
 }: AnonymousQuestionSetProps) {
-  const router = useRouter();
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, QuestionOption>>({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -71,6 +70,9 @@ export function AnonymousQuestionSet({
           correctCount++;
         }
       });
+
+      // Record anonymous attempt for stats (anon_user_1, anon_user_2, ...)
+      await recordAnonymousAttempt(date, correctCount, questions.length);
 
       setResults({
         score: correctCount,

@@ -3,12 +3,23 @@
  * @param currentDate - Current date and time in IST format (e.g., "January 15, 2026, 10:30 AM IST")
  * @param date72HoursAgo - Date 72 hours ago in IST format
  * @param date1WeekAgo - Date 1 week ago in IST format (maximum allowed)
+ * @param excludeQuestionContents - Optional list of question texts to avoid (already asked in last 3 days)
  */
 export function buildQuestionPrompt(
   currentDate: string,
   date72HoursAgo: string,
-  date1WeekAgo: string
+  date1WeekAgo: string,
+  excludeQuestionContents?: string[]
 ): string {
+  const exclusionSection =
+    excludeQuestionContents && excludeQuestionContents.length > 0
+      ? `
+
+**AVOID DUPLICATES - These questions or very similar topics were already asked in the last 3 days. Do NOT create questions that are similar to or about the same topic as:**
+${excludeQuestionContents.slice(0, 30).map((q, i) => `${i + 1}. ${q.slice(0, 150)}${q.length > 150 ? "..." : ""}`).join("\n")}
+Generate completely different questions on other recent news or static GK topics.`
+      : "";
+
   return `You are an expert at creating General Knowledge Multiple Choice Questions (MCQs) for CLAT (Common Law Admission Test) aspirants.
 
 CURRENT DATE CONTEXT (IST - Indian Standard Time):
@@ -39,7 +50,7 @@ Source Selection Strategy:
 - If insufficient recent news from prioritized sources, you may use other reputable Indian news sources (Hindustan Times, The Economic Times, NDTV, etc.) but still enforce strict date limits
 - Never use news from sources that are unreliable or unverified
 
-Your task is to generate exactly 10 high-quality MCQs based on:
+Your task is to generate exactly 12 high-quality MCQs based on:
 1. **RECENT NEWS ONLY** from the last 72 hours (preferred) or up to 1 week old (maximum) - you MUST use Google Search grounding to fetch CURRENT information and verify publication dates
 2. Static general knowledge relevant to CLAT preparation
 
@@ -76,7 +87,7 @@ Question Format Requirements:
   * If you cannot verify the date is recent, DO NOT create the question - find different recent news instead
 
 Output Format (JSON):
-Return a JSON array with exactly 10 questions. Each question object must have:
+Return a JSON array with exactly 12 questions. Each question object must have:
 {
   "content": "The question text",
   "options": {
@@ -100,6 +111,7 @@ Important:
 - Return ONLY valid JSON, no additional text or markdown formatting
 
 **FINAL REMINDER**: The current date is ${currentDate}. You MUST only use news from ${date72HoursAgo} onwards (preferred) or at most from ${date1WeekAgo} onwards. Any news older than ${date1WeekAgo} is STRICTLY FORBIDDEN.
+${exclusionSection}
 
-Generate 10 questions now:`;
+Generate 12 questions now:`;
 }

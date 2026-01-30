@@ -4,6 +4,9 @@ import { db } from "@/lib/db";
 import { questionSets, questions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getTodayIST } from "@/lib/utils/date";
+import { getQuestionContentsFromLast3Days } from "@/server-actions/questions";
+import { selectLeastSimilarQuestions } from "@/lib/utils/question-similarity";
+import type { QuestionSetInput } from "@/lib/validations/question-schema";
 
 /**
  * Generate questions endpoint - protected by CRON_SECRET
@@ -39,8 +42,16 @@ export async function POST(request: NextRequest) {
       console.log(`Deleted existing question set and associated questions for ${today}`);
     }
 
-    // Generate questions using Gemini AI
+    // Get question contents from last 3 days for deduplication
+    const existingContents = await getQuestionContentsFromLast3Days();
+
+    // Generate 12 questions, then keep the 10 with lowest similarity to last 30
     const generatedQuestions = await generateQuestions();
+    const uniqueQuestions = selectLeastSimilarQuestions(
+      generatedQuestions,
+      existingContents,
+      10
+    ) as QuestionSetInput;
 
     // Create question set
     const [newSet] = await db
@@ -51,7 +62,7 @@ export async function POST(request: NextRequest) {
       .returning();
 
     // Insert all questions
-    const questionsToInsert = generatedQuestions.map((q) => ({
+    const questionsToInsert = uniqueQuestions.map((q) => ({
       set_id: newSet.id,
       content: q.content,
       options: q.options,
@@ -66,7 +77,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: "Questions generated successfully",
       date: today,
-      questionCount: generatedQuestions.length,
+      questionCount: uniqueQuestions.length,
     });
   } catch (error) {
     console.error("Error generating questions:", error);

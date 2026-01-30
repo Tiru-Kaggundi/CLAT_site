@@ -3,9 +3,36 @@
 import { db } from "@/lib/db";
 import { questions, questionSets, userResponses, users } from "@/lib/db/schema";
 import { eq, and, inArray, sql, ne, gte, lte, desc } from "drizzle-orm";
-import { getTodayIST, formatIST } from "@/lib/utils/date";
+import { getTodayIST, formatIST, getDateDaysAgo } from "@/lib/utils/date";
 import { updateUserStreak } from "@/lib/utils/streak";
 import type { QuestionOption, QuestionWithResponse } from "@/types";
+
+/**
+ * Get question content strings from the last 3 days (yesterday, 2 days ago, 3 days ago)
+ * Used for deduplication - excludes today
+ */
+export async function getQuestionContentsFromLast3Days(): Promise<string[]> {
+  const dates = [
+    getDateDaysAgo(1), // yesterday
+    getDateDaysAgo(2),
+    getDateDaysAgo(3),
+  ];
+
+  const sets = await db
+    .select({ id: questionSets.id })
+    .from(questionSets)
+    .where(inArray(questionSets.date, dates));
+
+  if (sets.length === 0) return [];
+
+  const setIds = sets.map((s) => s.id);
+  const questionList = await db
+    .select({ content: questions.content })
+    .from(questions)
+    .where(inArray(questions.set_id, setIds));
+
+  return questionList.map((q) => q.content);
+}
 
 /**
  * Fetch today's question set without user responses (for anonymous users)

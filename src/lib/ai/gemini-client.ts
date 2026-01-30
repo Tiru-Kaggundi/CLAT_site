@@ -11,8 +11,9 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
  * Generate 10 GK MCQs using Gemini with Google Search grounding
+ * @param excludeQuestionContents - Optional list of question texts to avoid (e.g. from last 3 days)
  */
-export async function generateQuestions(): Promise<QuestionSetInput> {
+export async function generateQuestions(excludeQuestionContents?: string[]): Promise<QuestionSetInput> {
   // Calculate date boundaries
   const now = new Date();
   
@@ -27,8 +28,8 @@ export async function generateQuestions(): Promise<QuestionSetInput> {
   const date72HoursAgoStr = formatIST(date72HoursAgo, "MMMM d, yyyy, h:mm a 'IST'");
   const date1WeekAgoStr = formatIST(date1WeekAgo, "MMMM d, yyyy, h:mm a 'IST'");
   
-  // Build the prompt with date context
-  const prompt = buildQuestionPrompt(currentDateStr, date72HoursAgoStr, date1WeekAgoStr);
+  // Build the prompt with date context and optional exclusion list
+  const prompt = buildQuestionPrompt(currentDateStr, date72HoursAgoStr, date1WeekAgoStr, excludeQuestionContents);
   
   // Try multiple model names in order of preference
   // Prioritize Gemini 3 Flash first, then fallback to other models with grounding support

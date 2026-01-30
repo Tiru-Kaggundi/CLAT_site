@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -77,6 +78,14 @@ export default function GenerateQuestionsPage() {
               </p>
             </div>
           )}
+
+          <div className="pt-4 border-t">
+            <Link href="/dashboard/admin/anonymous-stats">
+              <Button variant="outline" className="w-full">
+                View Anonymous Attempt Stats
+              </Button>
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

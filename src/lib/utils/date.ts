@@ -1,4 +1,5 @@
 import { formatInTimeZone, toZonedTime } from "date-fns-tz";
+import { subDays } from "date-fns";
 
 const IST_TIMEZONE = "Asia/Kolkata";
 
@@ -37,4 +38,14 @@ export function hoursDifferenceIST(date1: Date, date2: Date): number {
   const ist1 = toIST(date1);
   const ist2 = toIST(date2);
   return Math.abs(ist1.getTime() - ist2.getTime()) / (1000 * 60 * 60);
+}
+
+/**
+ * Get date N days ago from today in IST as YYYY-MM-DD
+ * getDateDaysAgo(0) = today, getDateDaysAgo(1) = yesterday
+ */
+export function getDateDaysAgo(days: number): string {
+  const now = new Date();
+  const past = subDays(now, days);
+  return formatIST(past, "yyyy-MM-dd");
 }

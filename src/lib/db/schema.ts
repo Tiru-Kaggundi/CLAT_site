@@ -76,3 +76,13 @@ export const userResponsesRelations = relations(userResponses, ({ one }) => ({
     references: [questions.id],
   }),
 }));
+
+/** Anonymous attempts: one row per attempt, labeled anon_user_1, anon_user_2, ... */
+export const anonymousAttempts = pgTable("anonymous_attempts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  anon_user_label: text("anon_user_label").notNull(), // e.g. "anon_user_1"
+  set_date: date("set_date").notNull(),
+  score: integer("score").notNull(),
+  total_questions: integer("total_questions").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});

@@ -17,7 +17,7 @@ export const questionSchema = z.object({
   category: z.string().min(1),
 });
 
-export const questionSetSchema = z.array(questionSchema).length(10);
+export const questionSetSchema = z.array(questionSchema).min(7).max(12);
 
 export type QuestionInput = z.infer<typeof questionSchema>;
 export type QuestionSetInput = z.infer<typeof questionSetSchema>;
