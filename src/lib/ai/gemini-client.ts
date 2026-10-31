@@ -10,6 +10,22 @@ if (!process.env.GEMINI_API_KEY) {
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
+ * Raised when Gemini rejects the API key itself (no credit, invalid key,
+ * permission denied). Retrying with another model cannot help.
+ */
+class GeminiAccountError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GeminiAccountError";
+  }
+}
+
+/** HTTP statuses from the Gemini API that apply to the whole key, not one model. */
+function isAccountLevelError(message: string): boolean {
+  return /\[(400 Bad Request\] API key not valid|401 |402 |403 )/.test(message);
+}
+
+/**
  * Generate 10 GK MCQs using Gemini with Google Search grounding
  * @param excludeQuestionContents - Optional list of question texts to avoid (e.g. from last 3 days)
  */
@@ -31,17 +47,13 @@ export async function generateQuestions(excludeQuestionContents?: string[]): Pro
   // Build the prompt with date context and optional exclusion list
   const prompt = buildQuestionPrompt(currentDateStr, date72HoursAgoStr, date1WeekAgoStr, excludeQuestionContents);
   
-  // Try multiple model names in order of preference
-  // Prioritize Gemini 3 Flash first, then fallback to other models with grounding support
-  // Note: Grounding is REQUIRED for fetching recent news (last 72 hours)
+  // Models tried in order. Only models that are still served by the Gemini API
+  // and support Google Search grounding belong here. Retired models just 404
+  // and waste time, so prune this list when Google deprecates a model.
   const modelNames = [
-    "gemini-3-flash-preview", // Gemini 3 Flash Preview - latest model, try first
-    "gemini-2.0-flash-exp", // Gemini 2.0 Flash Experimental - best grounding support
-    "gemini-2.0-flash", // Gemini 2.0 Flash - good grounding support
-    "gemini-1.5-pro", // Gemini 1.5 Pro - reliable with grounding
-    "gemini-1.5-flash", // Gemini 1.5 Flash - supports grounding
-    "gemini-2.5-flash", // Gemini 2.5 Flash - may have grounding
-    "gemini-1.5-flash-latest", // Latest 1.5 Flash
+    "gemini-3.8-flash", // Recommended by Google's 404 notice for retired 2.0 models
+    "gemini-3-flash-preview",
+    "gemini-2.5-flash",
   ];
 
   let lastError: Error | null = null;
@@ -74,6 +86,12 @@ export async function generateQuestions(excludeQuestionContents?: string[]): Pro
         // Log the actual error for debugging
         const errorMessage = groundingError instanceof Error ? groundingError.message : String(groundingError);
         console.warn(`Search grounding (googleSearch) failed for ${modelName}:`, errorMessage);
+
+        // Billing / auth failures apply to the whole API key, so no other
+        // model or grounding syntax can succeed. Stop immediately.
+        if (isAccountLevelError(errorMessage)) {
+          throw new GeminiAccountError(errorMessage);
+        }
         
         // Try alternative syntax (googleSearchRetrieval for older models)
         try {
@@ -170,6 +188,12 @@ export async function generateQuestions(excludeQuestionContents?: string[]): Pro
       console.log(`Successfully generated questions using model: ${modelName}`);
       return validated;
     } catch (error) {
+      if (error instanceof GeminiAccountError) {
+        throw new Error(
+          `Gemini API rejected the request at account level (billing, quota or key). ` +
+          `Not trying other models. ${error.message}`
+        );
+      }
       console.warn(`Model ${modelName} failed:`, error instanceof Error ? error.message : "Unknown error");
       lastError = error instanceof Error ? error : new Error(String(error));
       // Continue to next model
