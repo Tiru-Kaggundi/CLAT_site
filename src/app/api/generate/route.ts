@@ -1,12 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateQuestions } from "@/lib/ai/gemini-client";
-import { db } from "@/lib/db";
-import { questionSets, questions } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
-import { getTodayIST } from "@/lib/utils/date";
-import { getQuestionContentsFromLast3Days } from "@/server-actions/questions";
-import { selectLeastSimilarQuestions } from "@/lib/utils/question-similarity";
-import type { QuestionSetInput } from "@/lib/validations/question-schema";
+import { publishDailyQuestionSet } from "@/lib/questions/publish-daily-set";
 
 /**
  * Generate questions endpoint - protected by CRON_SECRET
@@ -25,59 +18,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const today = getTodayIST();
-
-    // Check if question set already exists for today
-    const [existingSet] = await db
-      .select()
-      .from(questionSets)
-      .where(eq(questionSets.date, today))
-      .limit(1);
-
-    // If existing set found, delete it to allow regeneration
-    // This will cascade delete all associated questions and user responses
-    if (existingSet) {
-      console.log(`Deleting existing question set for ${today} to allow regeneration`);
-      await db.delete(questionSets).where(eq(questionSets.id, existingSet.id));
-      console.log(`Deleted existing question set and associated questions for ${today}`);
-    }
-
-    // Get question contents from last 3 days for deduplication
-    const existingContents = await getQuestionContentsFromLast3Days();
-
-    // Generate 12 questions, then keep the 10 with lowest similarity to last 30
-    const generatedQuestions = await generateQuestions();
-    const uniqueQuestions = selectLeastSimilarQuestions(
-      generatedQuestions,
-      existingContents,
-      10
-    ) as QuestionSetInput;
-
-    // Create question set
-    const [newSet] = await db
-      .insert(questionSets)
-      .values({
-        date: today,
-      })
-      .returning();
-
-    // Insert all questions
-    const questionsToInsert = uniqueQuestions.map((q) => ({
-      set_id: newSet.id,
-      content: q.content,
-      options: q.options,
-      correct_option: q.correct_option,
-      explanation: q.explanation,
-      category: q.category,
-    }));
-
-    await db.insert(questions).values(questionsToInsert);
+    const { date, questionCount } = await publishDailyQuestionSet();
 
     return NextResponse.json({
       success: true,
       message: "Questions generated successfully",
-      date: today,
-      questionCount: uniqueQuestions.length,
+      date,
+      questionCount,
     });
   } catch (error) {
     console.error("Error generating questions:", error);
